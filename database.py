@@ -56,6 +56,20 @@ def create_tables():
                 value TEXT NOT NULL
             )
         """)
+        
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS llm_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                agent_name TEXT NOT NULL,
+                model TEXT NOT NULL,
+                status TEXT NOT NULL,
+                tokens_in INTEGER DEFAULT 0,
+                tokens_out INTEGER DEFAULT 0,
+                time_ms INTEGER DEFAULT 0,
+                error_message TEXT,
+                created_at TEXT NOT NULL
+            )
+        """)
 
 
 def save_workout(
@@ -144,4 +158,115 @@ def save_equipment_detection(
             VALUES (?, ?, ?, ?)
         """, (timestamp, image_path, equipment_json, location))
         return cursor.lastrowid
+
+
+def save_llm_log(
+    agent_name: str,
+    model: str,
+    status: str,
+    tokens_in: int = 0,
+    tokens_out: int = 0,
+    time_ms: int = 0,
+    error_message: Optional[str] = None
+) -> int:
+    """Save LLM call log to database. Returns log ID."""
+    timestamp = datetime.now().isoformat()
+    
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO llm_logs 
+            (agent_name, model, status, tokens_in, tokens_out, time_ms, error_message, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (agent_name, model, status, tokens_in, tokens_out, time_ms, error_message, timestamp))
+        return cursor.lastrowid
+
+
+def get_llm_stats() -> Dict:
+    """Get aggregated LLM usage statistics."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Overall statistics
+        cursor.execute("SELECT COUNT(*) as total FROM llm_logs")
+        total_calls = cursor.fetchone()["total"]
+        
+        cursor.execute("SELECT COUNT(*) as total FROM llm_logs WHERE status = 'SUCCESS'")
+        successful_calls = cursor.fetchone()["total"]
+        
+        cursor.execute("SELECT SUM(tokens_in + tokens_out) as total FROM llm_logs")
+        total_tokens = cursor.fetchone()["total"] or 0
+        
+        # Breakdown by agent
+        cursor.execute("""
+            SELECT 
+                agent_name,
+                COUNT(*) as call_count,
+                SUM(tokens_in + tokens_out) as tokens_used,
+                AVG(time_ms) as avg_time_ms,
+                SUM(tokens_in) as tokens_in_sum,
+                SUM(tokens_out) as tokens_out_sum
+            FROM llm_logs
+            GROUP BY agent_name
+            ORDER BY call_count DESC
+        """)
+        agent_stats = []
+        for row in cursor.fetchall():
+            agent_stats.append({
+                "agent_name": row["agent_name"],
+                "call_count": row["call_count"],
+                "tokens_used": row["tokens_used"] or 0,
+                "avg_time_ms": round(row["avg_time_ms"] or 0, 2),
+                "tokens_in": row["tokens_in_sum"] or 0,
+                "tokens_out": row["tokens_out_sum"] or 0,
+            })
+        
+        # Breakdown by model
+        cursor.execute("""
+            SELECT 
+                model,
+                COUNT(*) as call_count,
+                SUM(tokens_in + tokens_out) as tokens_used,
+                SUM(tokens_in) as tokens_in_sum,
+                SUM(tokens_out) as tokens_out_sum
+            FROM llm_logs
+            GROUP BY model
+            ORDER BY call_count DESC
+        """)
+        model_stats = []
+        for row in cursor.fetchall():
+            model_stats.append({
+                "model": row["model"],
+                "call_count": row["call_count"],
+                "tokens_used": row["tokens_used"] or 0,
+                "tokens_in": row["tokens_in_sum"] or 0,
+                "tokens_out": row["tokens_out_sum"] or 0,
+            })
+        
+        # Calculate estimated cost
+        # GPT-4: $0.03/1K input, $0.06/1K output
+        # GPT-4o: $0.0025/1K input, $0.01/1K output
+        estimated_cost = 0.0
+        for model_stat in model_stats:
+            model = model_stat["model"]
+            tokens_in = model_stat["tokens_in"]
+            tokens_out = model_stat["tokens_out"]
+            
+            if "gpt-4o" in model.lower():
+                cost = (tokens_in / 1000) * 0.0025 + (tokens_out / 1000) * 0.01
+            elif "gpt-4" in model.lower():
+                cost = (tokens_in / 1000) * 0.03 + (tokens_out / 1000) * 0.06
+            else:
+                # Default estimate
+                cost = ((tokens_in + tokens_out) / 1000) * 0.008
+            estimated_cost += cost
+        
+        return {
+            "total_calls": total_calls,
+            "successful_calls": successful_calls,
+            "total_tokens": total_tokens,
+            "estimated_cost": round(estimated_cost, 4),
+            "by_agent": agent_stats,
+            "by_model": model_stats,
+        }
 

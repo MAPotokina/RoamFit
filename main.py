@@ -3,8 +3,13 @@ import streamlit as st
 import base64
 import re
 from io import BytesIO
+from typing import Any, Dict
 from PIL import Image
 from agents.strands_orchestrator import create_roamfit_orchestrator
+from database import create_tables
+
+# Initialize database tables
+create_tables()
 
 # Page configuration
 st.set_page_config(
@@ -51,6 +56,7 @@ with st.sidebar:
     - Chat naturally with the assistant
     """)
     
+    st.divider()
     if st.button("🗑️ Clear Chat", use_container_width=True):  # use_container_width still works for buttons
         st.session_state.messages = []
         st.rerun()
@@ -217,11 +223,11 @@ if prompt := st.chat_input("Ask about workouts, upload a photo, or request a wor
                         st.warning(f"Could not display chart: {str(e)}")
                 
                 # Add assistant response to chat
-                message_data = {
+                message_data: Dict[str, Any] = {
                     "role": "assistant",
                     "content": response_str
                 }
-                if chart_data:
+                if chart_data and isinstance(chart_data, dict):
                     message_data["chart"] = chart_data
                 st.session_state.messages.append(message_data)
                 

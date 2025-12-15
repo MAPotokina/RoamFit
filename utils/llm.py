@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Optional
 from openai import OpenAI
 from config import get_config
+from database import save_llm_log
 
 # Setup logging
 log_dir = Path("logs")
@@ -74,12 +75,28 @@ def call_llm(
             }
         )
         
+        # Log to database
+        try:
+            save_llm_log(
+                agent_name=agent_name,
+                model=model,
+                status="SUCCESS",
+                tokens_in=tokens_in,
+                tokens_out=tokens_out,
+                time_ms=response_time,
+            )
+        except Exception as db_error:
+            # Don't fail if database logging fails
+            logger.warning(f"Failed to log to database: {db_error}")
+        
         return response_text
         
     except Exception as e:
         response_time = int((time.time() - start_time) * 1000)
+        error_msg = str(e)
+        
         logger.error(
-            f"LLM call failed: {str(e)}",
+            f"LLM call failed: {error_msg}",
             extra={
                 "agent": agent_name,
                 "model": model,
@@ -89,6 +106,22 @@ def call_llm(
                 "time_ms": response_time,
             }
         )
+        
+        # Log to database
+        try:
+            save_llm_log(
+                agent_name=agent_name,
+                model=model,
+                status="FAILED",
+                tokens_in=0,
+                tokens_out=0,
+                time_ms=response_time,
+                error_message=error_msg,
+            )
+        except Exception as db_error:
+            # Don't fail if database logging fails
+            logger.warning(f"Failed to log to database: {db_error}")
+        
         raise
 
 
@@ -147,12 +180,28 @@ def call_vision(
             }
         )
         
+        # Log to database
+        try:
+            save_llm_log(
+                agent_name=agent_name,
+                model=model,
+                status="SUCCESS",
+                tokens_in=tokens_in,
+                tokens_out=tokens_out,
+                time_ms=response_time,
+            )
+        except Exception as db_error:
+            # Don't fail if database logging fails
+            logger.warning(f"Failed to log to database: {db_error}")
+        
         return response_text
         
     except Exception as e:
         response_time = int((time.time() - start_time) * 1000)
+        error_msg = str(e)
+        
         logger.error(
-            f"Vision call failed: {str(e)}",
+            f"Vision call failed: {error_msg}",
             extra={
                 "agent": agent_name,
                 "model": model,
@@ -162,5 +211,21 @@ def call_vision(
                 "time_ms": response_time,
             }
         )
+        
+        # Log to database
+        try:
+            save_llm_log(
+                agent_name=agent_name,
+                model=model,
+                status="FAILED",
+                tokens_in=0,
+                tokens_out=0,
+                time_ms=response_time,
+                error_message=error_msg,
+            )
+        except Exception as db_error:
+            # Don't fail if database logging fails
+            logger.warning(f"Failed to log to database: {db_error}")
+        
         raise
 
