@@ -1,0 +1,7 @@
+strands>=0.1.0
+fastapi>=0.104.0
+streamlit>=1.28.0
+pillow>=10.0.0
+openai>=1.3.0
+python-dotenv>=1.0.0
+
