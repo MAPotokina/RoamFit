@@ -2,11 +2,14 @@
 import json
 from typing import List, Dict, Any, Optional
 from utils.llm import call_llm
+from database import save_workout
 
 
 def generate_workout(
     equipment: List[str],
-    workout_history: Optional[Dict[str, Any]] = None
+    workout_history: Optional[Dict[str, Any]] = None,
+    location: Optional[str] = None,
+    save_to_db: bool = True
 ) -> Dict[str, Any]:
     """Generate workout plan based on equipment and history."""
     if not equipment:
@@ -99,6 +102,20 @@ JSON response:"""
             # Generate description if missing
             format_name = workout_plan.get("format", "AMRAP")
             workout_plan["workout_description"] = f"Perform this workout as {format_name}"
+        
+        # Save workout to database if requested
+        if save_to_db and not workout_plan.get("error"):
+            try:
+                workout_id = save_workout(
+                    equipment=equipment,
+                    workout_plan=workout_plan,
+                    location=location,
+                    completed=False
+                )
+                workout_plan["workout_id"] = workout_id
+            except Exception as e:
+                # Don't fail if saving fails, just log it
+                workout_plan["save_error"] = str(e)
         
         return workout_plan
         

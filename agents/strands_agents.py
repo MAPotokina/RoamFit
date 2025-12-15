@@ -6,6 +6,7 @@ from agents.clients import (
     workout_generator_client,
     graph_trends_client,
     location_activity_client,
+    workout_management_client,
     llm_model
 )
 from agents.prompts import (
@@ -14,6 +15,7 @@ from agents.prompts import (
     WORKOUT_GENERATOR_PROMPT,
     GRAPH_TRENDS_PROMPT,
     LOCATION_ACTIVITY_PROMPT,
+    WORKOUT_MANAGEMENT_PROMPT,
 )
 
 
@@ -171,6 +173,31 @@ def location_activity_agent(query: str) -> str:
         
         agent = Agent(
             system_prompt=LOCATION_ACTIVITY_PROMPT,
+            tools=tools,
+            model=llm_model,
+        )
+        
+        response = agent(query)
+        return str(response)
+
+
+@tool
+def workout_management_agent(query: str) -> str:
+    """
+    Manage workouts: list, view, edit, delete, and mark as complete.
+    
+    Example queries:
+    - "List my workouts"
+    - "Show me workout #5"
+    - "Delete workout #3"
+    - "Edit workout #2 to add location"
+    - "Mark workout #1 as completed"
+    """
+    with workout_management_client:
+        tools = workout_management_client.list_tools_sync()
+        
+        agent = Agent(
+            system_prompt=WORKOUT_MANAGEMENT_PROMPT,
             tools=tools,
             model=llm_model,
         )

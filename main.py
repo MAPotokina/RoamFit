@@ -6,7 +6,7 @@ from io import BytesIO
 from typing import Any, Dict
 from PIL import Image
 from agents.strands_orchestrator import create_roamfit_orchestrator
-from database import create_tables
+from database import create_tables, update_workout_completion, get_last_workout
 
 # Initialize database tables
 create_tables()
@@ -221,6 +221,32 @@ if prompt := st.chat_input("Ask about workouts, upload a photo, or request a wor
                         st.image(chart_img, caption=f"{chart_data.get('chart_type', 'Chart').title()} Chart", width='stretch')
                     except Exception as e:
                         st.warning(f"Could not display chart: {str(e)}")
+                
+                # Check if a workout was generated and offer to mark as completed
+                # Look for workout-related keywords in the response
+                workout_keywords = ["workout", "emom", "amrap", "for time", "tabata", "chipper", "exercise", "reps"]
+                is_workout_response = any(keyword in response_str.lower() for keyword in workout_keywords)
+                
+                # Try to get the last workout from database (if it was just saved)
+                if is_workout_response:
+                    try:
+                        last_workout = get_last_workout()
+                        if last_workout and not last_workout.get("completed", False):
+                            workout_id = last_workout["id"]
+                            st.divider()
+                            col1, col2 = st.columns([3, 1])
+                            with col1:
+                                st.info(f"💪 Workout saved! ID: {workout_id}")
+                            with col2:
+                                if st.button("✅ Mark as Completed", key=f"complete_{workout_id}", use_container_width=True):
+                                    if update_workout_completion(workout_id, completed=True):
+                                        st.success("Workout marked as completed! 🎉")
+                                        st.rerun()
+                                    else:
+                                        st.error("Failed to update workout status")
+                    except Exception as e:
+                        # Silently fail if we can't check/get workout
+                        pass
                 
                 # Add assistant response to chat
                 message_data: Dict[str, Any] = {

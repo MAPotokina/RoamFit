@@ -98,3 +98,17 @@ location_activity_client = MCPClient(
     )
 )
 
+# MCP Client for Workout Management
+workout_management_client = MCPClient(
+    lambda: stdio_client(
+        StdioServerParameters(
+            command="python",
+            args=[str(project_root / "agents" / "workout_management_mcp.py")],
+            env={
+                **os.environ,
+                "PYTHONPATH": str(project_root),
+            }
+        )
+    )
+)
+

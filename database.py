@@ -141,6 +141,96 @@ def get_workout_history(limit: int = 5) -> List[Dict]:
         return workouts
 
 
+def update_workout_completion(workout_id: int, completed: bool = True) -> bool:
+    """Update workout completion status. Returns True if successful."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            UPDATE workouts
+            SET completed = ?
+            WHERE id = ?
+        """, (1 if completed else 0, workout_id))
+        return cursor.rowcount > 0
+
+
+def get_workout_by_id(workout_id: int) -> Optional[Dict]:
+    """Get workout by ID. Returns None if not found."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM workouts
+            WHERE id = ?
+        """, (workout_id,))
+        row = cursor.fetchone()
+        
+        if row is None:
+            return None
+        
+        return {
+            "id": row["id"],
+            "date": row["date"],
+            "equipment": json.loads(row["equipment"]),
+            "workout_plan": json.loads(row["workout_plan"]),
+            "location": row["location"],
+            "completed": bool(row["completed"]),
+        }
+
+
+def update_workout(
+    workout_id: int,
+    equipment: Optional[List[str]] = None,
+    workout_plan: Optional[Dict] = None,
+    location: Optional[str] = None,
+    completed: Optional[bool] = None
+) -> bool:
+    """Update workout fields. Returns True if successful."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        
+        # Get existing workout
+        cursor.execute("SELECT * FROM workouts WHERE id = ?", (workout_id,))
+        row = cursor.fetchone()
+        if row is None:
+            return False
+        
+        # Update only provided fields
+        updates = []
+        values = []
+        
+        if equipment is not None:
+            updates.append("equipment = ?")
+            values.append(json.dumps(equipment))
+        
+        if workout_plan is not None:
+            updates.append("workout_plan = ?")
+            values.append(json.dumps(workout_plan))
+        
+        if location is not None:
+            updates.append("location = ?")
+            values.append(location)
+        
+        if completed is not None:
+            updates.append("completed = ?")
+            values.append(1 if completed else 0)
+        
+        if not updates:
+            return False
+        
+        values.append(workout_id)
+        
+        query = f"UPDATE workouts SET {', '.join(updates)} WHERE id = ?"
+        cursor.execute(query, values)
+        return cursor.rowcount > 0
+
+
+def delete_workout(workout_id: int) -> bool:
+    """Delete workout by ID. Returns True if successful."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM workouts WHERE id = ?", (workout_id,))
+        return cursor.rowcount > 0
+
+
 def save_equipment_detection(
     image_path: str,
     detected_equipment: List[str],

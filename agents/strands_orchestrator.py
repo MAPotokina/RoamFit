@@ -6,6 +6,7 @@ from agents.strands_agents import (
     workout_generator_agent,
     graph_trends_agent,
     location_activity_agent,
+    workout_management_agent,
 )
 from agents.prompts import ORCHESTRATOR_PROMPT
 from agents.clients import llm_model
@@ -26,6 +27,7 @@ def create_roamfit_orchestrator():
             workout_generator_agent,
             graph_trends_agent,
             location_activity_agent,
+            workout_management_agent,
         ],
         model=llm_model,
     )
