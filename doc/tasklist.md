@@ -5,7 +5,7 @@
 | Iteration | Status | Description | Test Status |
 |-----------|--------|-------------|-------------|
 | 1. Project Setup | ✅ Complete | Project structure, dependencies, config | ✅ Passed |
-| 2. Database Foundation | ⏳ Not Started | SQLite schema and basic operations | - |
+| 2. Database Foundation | ✅ Complete | SQLite schema and basic operations | ✅ Passed |
 | 3. LLM Utilities | ⏳ Not Started | LLM wrapper functions with logging | - |
 | 4. Workout Summary Agent | ⏳ Not Started | First agent - tracks workout history | - |
 | 5. Equipment Detection Agent | ⏳ Not Started | Vision-based equipment detection | - |
@@ -41,11 +41,11 @@
 
 **Goal**: Set up SQLite database with schema
 
-- [ ] Create `database.py` with database initialization
-- [ ] Implement `create_tables()` for workouts, equipment_detections, user_preferences
-- [ ] Create basic CRUD functions: `save_workout()`, `get_last_workout()`, `save_equipment_detection()`
-- [ ] Add database connection management (context managers)
-- [ ] Test: Create database, insert sample data, query it
+- [x] Create `database.py` with database initialization
+- [x] Implement `create_tables()` for workouts, equipment_detections, user_preferences
+- [x] Create basic CRUD functions: `save_workout()`, `get_last_workout()`, `save_equipment_detection()`
+- [x] Add database connection management (context managers)
+- [x] Test: Create database, insert sample data, query it
 
 **Test**: Run database operations manually - insert workout, retrieve it, verify data integrity
 
