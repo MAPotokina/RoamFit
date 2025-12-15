@@ -8,39 +8,52 @@ from datetime import datetime
 class Exercise:
     """Represents a single exercise in a workout."""
     name: str
-    sets: int
     reps: int
-    rest_seconds: int
     instructions: str
+    sets: Optional[int] = None  # Optional for CrossFit formats
+    rest_seconds: Optional[int] = None  # Optional for CrossFit formats
 
 
 @dataclass
 class WorkoutPlan:
-    """Represents a complete workout plan."""
+    """Represents a complete CrossFit-style workout plan."""
+    format: str  # "EMOM", "AMRAP", "For Time", "Rounds for Time", "Tabata", "Chipper"
     exercises: List[Exercise]
     duration_minutes: int
     focus: str  # "upper_body", "lower_body", "full_body", "cardio"
+    workout_description: Optional[str] = None  # Description of how to perform the workout
     warmup: Optional[str] = None
     cooldown: Optional[str] = None
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        return {
+        result = {
+            "format": self.format,
             "exercises": [
                 {
                     "name": ex.name,
-                    "sets": ex.sets,
                     "reps": ex.reps,
-                    "rest_seconds": ex.rest_seconds,
                     "instructions": ex.instructions
                 }
                 for ex in self.exercises
             ],
             "duration_minutes": self.duration_minutes,
             "focus": self.focus,
-            "warmup": self.warmup,
-            "cooldown": self.cooldown
         }
+        # Add optional fields
+        if self.workout_description:
+            result["workout_description"] = self.workout_description
+        if self.warmup:
+            result["warmup"] = self.warmup
+        if self.cooldown:
+            result["cooldown"] = self.cooldown
+        # Add optional exercise fields if present
+        for i, ex in enumerate(self.exercises):
+            if ex.sets is not None:
+                result["exercises"][i]["sets"] = ex.sets
+            if ex.rest_seconds is not None:
+                result["exercises"][i]["rest_seconds"] = ex.rest_seconds
+        return result
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "WorkoutPlan":
@@ -48,17 +61,19 @@ class WorkoutPlan:
         exercises = [
             Exercise(
                 name=ex["name"],
-                sets=ex["sets"],
                 reps=ex["reps"],
-                rest_seconds=ex["rest_seconds"],
-                instructions=ex["instructions"]
+                instructions=ex["instructions"],
+                sets=ex.get("sets"),
+                rest_seconds=ex.get("rest_seconds")
             )
             for ex in data.get("exercises", [])
         ]
         return cls(
+            format=data.get("format", "AMRAP"),
             exercises=exercises,
-            duration_minutes=data.get("duration_minutes", 0),
+            duration_minutes=data.get("duration_minutes", 20),
             focus=data.get("focus", "full_body"),
+            workout_description=data.get("workout_description"),
             warmup=data.get("warmup"),
             cooldown=data.get("cooldown")
         )

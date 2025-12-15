@@ -28,35 +28,45 @@ def generate_workout(
         history_text += f"Total previous workouts: {workout_history.get('total_workouts', 0)}\n"
     
     # Create prompt requesting JSON response
-    prompt = f"""Generate a personalized workout plan based on the available equipment and workout history.
+    prompt = f"""Generate a CrossFit-style workout plan in whiteboard format (CONCISE, no long descriptions).
 
 Available Equipment: {equipment_text}
 {history_text}
 
-Create a workout plan that:
+Create a CrossFit workout that:
 - Uses only the available equipment listed above
-- Varies exercises from previous workouts (if history provided)
-- Includes proper warm-up and cool-down suggestions
-- Provides clear instructions for each exercise
+- Uses CrossFit formats: EMOM, AMRAP, For Time, Rounds for Time, Tabata, or Chipper
+- Varies exercises and formats from previous workouts (if history provided)
+- Keep it CONCISE like a CrossFit whiteboard - just format, exercises, and reps
 
 Return your response as a JSON object with this exact format:
 {{
+  "format": "EMOM" or "AMRAP" or "For Time" or "Rounds for Time" or "Tabata" or "Chipper",
+  "duration_minutes": 20,
   "exercises": [
     {{
       "name": "Exercise Name",
-      "sets": 3,
       "reps": 10,
-      "rest_seconds": 60,
-      "instructions": "Brief instructions for proper form"
+      "instructions": ""
     }}
   ],
-  "duration_minutes": 30,
+  "workout_description": "Brief whiteboard-style description (one line, e.g., 'AMRAP 15: 10 Thrusters, 15 Burpees')",
   "focus": "upper_body" or "lower_body" or "full_body" or "cardio",
-  "warmup": "Brief warm-up suggestions",
-  "cooldown": "Brief cool-down suggestions"
+  "warmup": "Brief warm-up (one line)",
+  "cooldown": "Brief cool-down (one line)"
 }}
 
-Include 4-6 exercises that can be done with the available equipment.
+IMPORTANT - WHITEBOARD STYLE:
+- Keep exercise names SHORT and clear (e.g., "Dumbbell Thrusters", "Burpees", "Pull-ups")
+- Leave "instructions" field EMPTY or very brief (max 5 words)
+- Workout description should be whiteboard-style (e.g., "EMOM 12: Min 1-3 Thrusters, Min 4-6 Burpees")
+- For EMOM: format like "EMOM 12: Min 1-3 [exercise] [reps], Min 4-6 [exercise] [reps]"
+- For AMRAP: format like "AMRAP 15: [exercise] [reps], [exercise] [reps]"
+- For For Time: format like "For Time: [exercise] [reps], [exercise] [reps]"
+- Include 3-5 exercises that can be done with the available equipment
+- Make it challenging but achievable
+- NO long descriptions - keep it like a whiteboard!
+
 JSON response:"""
     
     try:
@@ -77,12 +87,18 @@ JSON response:"""
         workout_plan = json.loads(json_str)
         
         # Validate structure
+        if "format" not in workout_plan:
+            workout_plan["format"] = "AMRAP"  # Default CrossFit format
         if "exercises" not in workout_plan:
             workout_plan["exercises"] = []
         if "duration_minutes" not in workout_plan:
-            workout_plan["duration_minutes"] = 0
+            workout_plan["duration_minutes"] = 20  # Typical CrossFit workout duration
         if "focus" not in workout_plan:
             workout_plan["focus"] = "full_body"
+        if "workout_description" not in workout_plan:
+            # Generate description if missing
+            format_name = workout_plan.get("format", "AMRAP")
+            workout_plan["workout_description"] = f"Perform this workout as {format_name}"
         
         return workout_plan
         
