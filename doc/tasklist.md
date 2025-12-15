@@ -9,7 +9,7 @@
 | 3. LLM Utilities | ✅ Complete | LLM wrapper functions with logging | ✅ Passed |
 | 4. Workout Summary Agent | ✅ Complete | First agent - tracks workout history | ✅ Passed |
 | 5. Equipment Detection Agent | ✅ Complete | Vision-based equipment detection | ✅ Passed |
-| 6. Workout Generator Agent | ⏳ Not Started | Generates workouts from equipment/history | - |
+| 6. Workout Generator Agent | ✅ Complete | Generates workouts from equipment/history | ✅ Passed |
 | 7. Orchestrator Agent | ⏳ Not Started | Coordinates agents using Strands | - |
 | 8. API Layer | ⏳ Not Started | FastAPI endpoints | - |
 | 9. UI Layer | ⏳ Not Started | Streamlit interface | - |
@@ -97,11 +97,11 @@
 
 **Goal**: Generate workout plans based on equipment and history
 
-- [ ] Create `agents/workout_generator.py`
-- [ ] Implement `generate_workout(equipment, workout_history)` - uses LLM
-- [ ] Request structured JSON response (exercises, sets, reps, duration)
-- [ ] Return workout plan as dict
-- [ ] Test: Pass equipment list and history, verify workout plan generation
+- [x] Create `agents/workout_generator.py`
+- [x] Implement `generate_workout(equipment, workout_history)` - uses LLM
+- [x] Request structured JSON response (exercises, sets, reps, duration)
+- [x] Return workout plan as dict
+- [x] Test: Pass equipment list and history, verify workout plan generation
 
 **Test**: Call with equipment=["dumbbells", "bench"] and history, verify structured workout plan
 
