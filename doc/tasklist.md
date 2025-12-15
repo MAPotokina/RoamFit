@@ -12,7 +12,7 @@
 | 6. Workout Generator Agent | ✅ Complete | Generates workouts from equipment/history | ✅ Passed |
 | 7. Orchestrator Agent | ✅ Complete | Coordinates agents using Strands | ✅ Passed |
 | 8. API Layer | ✅ Complete | FastAPI endpoints | ✅ Passed |
-| 9. UI Layer | ⏳ Not Started | Streamlit interface | - |
+| 9. UI Layer | ✅ Complete | Streamlit interface | ✅ Passed |
 | 10. Graph/Trends Agent | ⏳ Not Started | Progress visualization | - |
 | 11. Location Agent | ⏳ Not Started | Nearby gyms and tracks | - |
 | 12. Integration & Polish | ⏳ Not Started | End-to-end testing and refinements | - |
@@ -142,13 +142,13 @@
 
 **Goal**: Create Streamlit interface for user interaction
 
-- [ ] Create `main.py` with Streamlit app
-- [ ] Add file uploader for equipment photos
-- [ ] Add button to generate workout
-- [ ] Display workout plan in formatted way
-- [ ] Add section to view workout history
-- [ ] Connect UI to FastAPI endpoints
-- [ ] Test: Run `streamlit run main.py`, test all UI interactions
+- [x] Create `main.py` with Streamlit app
+- [x] Add file uploader for equipment photos
+- [x] Add button to generate workout
+- [x] Display workout plan in formatted way
+- [x] Add section to view workout history
+- [x] Connect UI to FastAPI endpoints
+- [x] Test: Run `streamlit run main.py`, test all UI interactions
 
 **Test**: Launch app, upload photo, generate workout, verify display and functionality
 
