@@ -1,7 +1,7 @@
 """Equipment Detection Agent for ROAMFIT."""
 import json
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from utils.llm import call_vision
 from database import save_equipment_detection
 from models.schemas import EquipmentDetection
@@ -9,7 +9,7 @@ from models.schemas import EquipmentDetection
 
 def detect_equipment(
     image_path: str,
-    location: str = None
+    location: Optional[str] = None
 ) -> Dict[str, Any]:
     """Detect equipment from image. Returns equipment list and detection ID."""
     # Validate image file exists

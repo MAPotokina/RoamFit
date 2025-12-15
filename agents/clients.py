@@ -33,7 +33,7 @@ equipment_detection_client = MCPClient(
     lambda: stdio_client(
         StdioServerParameters(
             command="python",
-            args=[str(project_root / "agents" / "equipment_detection_mcp.py")],
+            args=["-m", "mcp_servers.equipment_detection"],
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
@@ -47,7 +47,7 @@ workout_summary_client = MCPClient(
     lambda: stdio_client(
         StdioServerParameters(
             command="python",
-            args=[str(project_root / "agents" / "workout_summary_mcp.py")],
+            args=["-m", "mcp_servers.workout_summary"],
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
@@ -61,7 +61,7 @@ workout_generator_client = MCPClient(
     lambda: stdio_client(
         StdioServerParameters(
             command="python",
-            args=[str(project_root / "agents" / "workout_generator_mcp.py")],
+            args=["-m", "mcp_servers.workout_generator"],
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
@@ -75,7 +75,7 @@ graph_trends_client = MCPClient(
     lambda: stdio_client(
         StdioServerParameters(
             command="python",
-            args=[str(project_root / "agents" / "graph_trends_mcp.py")],
+            args=["-m", "mcp_servers.graph_trends"],
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
@@ -89,7 +89,7 @@ location_activity_client = MCPClient(
     lambda: stdio_client(
         StdioServerParameters(
             command="python",
-            args=[str(project_root / "agents" / "location_activity_mcp.py")],
+            args=["-m", "mcp_servers.location_activity"],
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
@@ -103,7 +103,7 @@ workout_management_client = MCPClient(
     lambda: stdio_client(
         StdioServerParameters(
             command="python",
-            args=[str(project_root / "agents" / "workout_management_mcp.py")],
+            args=["-m", "mcp_servers.workout_management"],
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
