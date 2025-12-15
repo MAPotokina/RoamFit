@@ -1,6 +1,6 @@
 """Data models/schemas for ROAMFIT."""
 from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Union
 from datetime import datetime
 
 
@@ -175,5 +175,102 @@ class EquipmentDetection:
             result["location"] = self.location
         if self.error:
             result["error"] = self.error
+        return result
+
+
+# Agent Response Dataclasses
+@dataclass
+class AgentResponse:
+    """Base class for agent responses."""
+    success: bool
+    message: str
+    data: Optional[Dict[str, Any]] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "success": self.success,
+            "message": self.message,
+            "data": self.data
+        }
+
+
+@dataclass
+class EquipmentDetectionResponse(AgentResponse):
+    """Response from equipment detection agent."""
+    equipment: List[str] = field(default_factory=list)
+    image_path: Optional[str] = None
+    location: Optional[str] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = super().to_dict()
+        result.update({
+            "equipment": self.equipment,
+            "image_path": self.image_path,
+            "location": self.location
+        })
+        return result
+
+
+@dataclass
+class WorkoutSummaryResponse(AgentResponse):
+    """Response from workout summary agent."""
+    summary: Optional[str] = None
+    last_workout_date: Optional[str] = None
+    total_workouts: int = 0
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = super().to_dict()
+        result.update({
+            "summary": self.summary,
+            "last_workout_date": self.last_workout_date,
+            "total_workouts": self.total_workouts
+        })
+        return result
+
+
+@dataclass
+class WorkoutGeneratorResponse(AgentResponse):
+    """Response from workout generator agent."""
+    workout_plan: Optional[Dict[str, Any]] = None
+    workout_id: Optional[int] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = super().to_dict()
+        result.update({
+            "workout_plan": self.workout_plan,
+            "workout_id": self.workout_id
+        })
+        return result
+
+
+@dataclass
+class GraphTrendsResponse(AgentResponse):
+    """Response from graph/trends agent."""
+    stats: Optional[Dict[str, Any]] = None
+    chart_type: Optional[str] = None
+    chart_data: Optional[Dict[str, Any]] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = super().to_dict()
+        result.update({
+            "stats": self.stats,
+            "chart_type": self.chart_type,
+            "chart_data": self.chart_data
+        })
+        return result
+
+
+@dataclass
+class LocationActivityResponse(AgentResponse):
+    """Response from location activity agent."""
+    locations: List[Dict[str, Any]] = field(default_factory=list)
+    location_query: Optional[str] = None
+    
+    def to_dict(self) -> Dict[str, Any]:
+        result = super().to_dict()
+        result.update({
+            "locations": self.locations,
+            "location_query": self.location_query
+        })
         return result
 

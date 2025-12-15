@@ -16,8 +16,8 @@ def create_roamfit_orchestrator():
     """
     Create the main orchestrator agent for ROAMFIT.
     
-    This orchestrator coordinates all specialized tool agents to deliver
-    complete fitness assistance workflows.
+    The orchestrator uses LLM-based decision making to choose which agents to call.
+    The prompt guides it to only call necessary agents based on the query.
     """
     orchestrator = Agent(
         system_prompt=ORCHESTRATOR_PROMPT,

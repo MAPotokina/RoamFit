@@ -161,6 +161,7 @@ if prompt := st.chat_input("Ask about workouts, upload a photo, or request a wor
                 # The query already mentions "uploaded image", so the agent should handle it
                 
                 # Use the query (already cleaned - no base64 included)
+                # The orchestrator LLM will decide which agents to call based on the query
                 response = st.session_state.orchestrator(query)
                 response_str = str(response)
                 
