@@ -7,7 +7,7 @@
 | 1. Project Setup | ✅ Complete | Project structure, dependencies, config | ✅ Passed |
 | 2. Database Foundation | ✅ Complete | SQLite schema and basic operations | ✅ Passed |
 | 3. LLM Utilities | ✅ Complete | LLM wrapper functions with logging | ✅ Passed |
-| 4. Workout Summary Agent | ⏳ Not Started | First agent - tracks workout history | - |
+| 4. Workout Summary Agent | ✅ Complete | First agent - tracks workout history | ✅ Passed |
 | 5. Equipment Detection Agent | ⏳ Not Started | Vision-based equipment detection | - |
 | 6. Workout Generator Agent | ⏳ Not Started | Generates workouts from equipment/history | - |
 | 7. Orchestrator Agent | ⏳ Not Started | Coordinates agents using Strands | - |
@@ -69,11 +69,11 @@
 
 **Goal**: First working agent - retrieves and summarizes workout history
 
-- [ ] Create `agents/workout_summary.py`
-- [ ] Implement `get_last_workout()` - queries database
-- [ ] Implement `summarize_workout_history()` - uses LLM to create summary
-- [ ] Return structured data (dict with summary text)
-- [ ] Test: Save sample workouts, call agent, verify summary generation
+- [x] Create `agents/workout_summary.py`
+- [x] Implement `get_last_workout()` - queries database
+- [x] Implement `summarize_workout_history()` - uses LLM to create summary
+- [x] Return structured data (dict with summary text)
+- [x] Test: Save sample workouts, call agent, verify summary generation
 
 **Test**: Create 2-3 sample workouts in DB, call agent, verify it returns workout history summary
 

@@ -102,6 +102,31 @@ def get_last_workout() -> Optional[Dict]:
         }
 
 
+def get_workout_history(limit: int = 5) -> List[Dict]:
+    """Get recent workout history. Returns list of workouts."""
+    with get_db_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT * FROM workouts
+            ORDER BY date DESC
+            LIMIT ?
+        """, (limit,))
+        rows = cursor.fetchall()
+        
+        workouts = []
+        for row in rows:
+            workouts.append({
+                "id": row["id"],
+                "date": row["date"],
+                "equipment": json.loads(row["equipment"]),
+                "workout_plan": json.loads(row["workout_plan"]),
+                "location": row["location"],
+                "completed": bool(row["completed"]),
+            })
+        
+        return workouts
+
+
 def save_equipment_detection(
     image_path: str,
     detected_equipment: List[str],
