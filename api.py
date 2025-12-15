@@ -1,14 +1,26 @@
 """FastAPI application for ROAMFIT with Strands."""
-from fastapi import FastAPI, File, UploadFile, Form, HTTPException
+import logging
+import time
+from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 import base64
-import tempfile
-import os
+import json
 from pathlib import Path
 
 from agents.strands_orchestrator import create_roamfit_orchestrator
+from utils.exceptions import handle_exception, ValidationError, AgentError
+from utils.validation import (
+    validate_image_file,
+    validate_equipment_list,
+    validate_location
+)
+from config import setup_logging
+
+# Setup logging
+setup_logging()
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="ROAMFIT API (Strands)", version="2.0.0")
 
@@ -20,6 +32,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# Request logging middleware
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all API requests."""
+    start_time = time.time()
+    logger.info(f"Request: {request.method} {request.url.path} from {request.client.host if request.client else 'unknown'}")
+    
+    response = await call_next(request)
+    
+    process_time = time.time() - start_time
+    logger.info(f"Response: {request.method} {request.url.path} - {response.status_code} ({process_time:.3f}s)")
+    
+    return response
+
 
 # Initialize orchestrator (singleton)
 _orchestrator = None
@@ -35,6 +63,7 @@ def get_orchestrator():
 
 @app.post("/chat")
 async def chat_endpoint(
+    request: Request,
     message: str = Form(...),
     image: Optional[UploadFile] = File(None)
 ):
@@ -47,30 +76,22 @@ async def chat_endpoint(
     Optional:
     - image: Equipment photo file (jpg, jpeg, png)
     """
-    # Input validation
-    if not message or not message.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="message parameter is required and cannot be empty"
-        )
-    
-    if image:
-        file_size = getattr(image, 'size', None) or 0
-        if file_size > 10 * 1024 * 1024:  # 10MB limit
-            raise HTTPException(
-                status_code=400,
-                detail="Image file too large. Maximum size is 10MB"
-            )
-        
-        allowed_types = ["image/jpeg", "image/jpg", "image/png"]
-        content_type = getattr(image, 'content_type', None) or ""
-        if content_type not in allowed_types:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
-            )
+    logger.info(f"API request: POST /chat from {request.client.host if request.client else 'unknown'}")
     
     try:
+        # Input validation
+        if not message or not message.strip():
+            raise ValidationError("message parameter is required and cannot be empty")
+        
+        # Validate image if provided
+        if image:
+            content = await image.read()
+            is_valid, error_msg = validate_image_file(content, filename=image.filename)
+            if not is_valid:
+                raise ValidationError(error_msg or "Invalid image file")
+            
+            logger.info(f"Image uploaded: {image.filename}, size: {len(content)} bytes")
+        
         orchestrator = get_orchestrator()
         
         # Prepare query
@@ -84,23 +105,27 @@ async def chat_endpoint(
             query = f"I've uploaded an image of my available equipment. Please detect the equipment from this image: {image_data_uri}. {query}"
         
         # Get response from orchestrator
+        logger.info(f"Calling orchestrator with query length: {len(query)}")
         response = orchestrator(query)
         
+        logger.info("Chat endpoint completed successfully")
         return JSONResponse(content={
             "response": str(response),
             "message": message,
             "has_image": image is not None
         })
         
+    except ValidationError as e:
+        logger.warning(f"Validation error in /chat: {e.message}")
+        return handle_exception(e, context="chat_endpoint")
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        )
+        logger.error(f"Unexpected error in /chat: {str(e)}", exc_info=True)
+        return handle_exception(e, context="chat_endpoint")
 
 
 @app.post("/generate-workout")
 async def generate_workout_endpoint(
+    request: Request,
     image: Optional[UploadFile] = File(None),
     equipment: Optional[str] = Form(None),
     location: Optional[str] = Form(None)
@@ -115,22 +140,46 @@ async def generate_workout_endpoint(
     Optional:
     - location: Location string (e.g., "Hotel Gym, Room 205")
     """
-    # Input validation
-    if not image and not equipment:
-        raise HTTPException(
-            status_code=400,
-            detail="Either 'image' file or 'equipment' JSON array must be provided"
-        )
-    
-    if image:
-        file_size = getattr(image, 'size', None) or 0
-        if file_size > 10 * 1024 * 1024:  # 10MB limit
-            raise HTTPException(
-                status_code=400,
-                detail="Image file too large. Maximum size is 10MB"
-            )
+    logger.info(f"API request: POST /generate-workout from {request.client.host if request.client else 'unknown'}")
     
     try:
+        # Input validation
+        if not image and not equipment:
+            raise ValidationError("Either 'image' file or 'equipment' JSON array must be provided")
+        
+        equipment_list = None
+        
+        # Validate image if provided
+        if image:
+            content = await image.read()
+            is_valid, error_msg = validate_image_file(content, filename=image.filename)
+            if not is_valid:
+                raise ValidationError(error_msg or "Invalid image file")
+            logger.info(f"Image uploaded: {image.filename}, size: {len(content)} bytes")
+        
+        # Validate equipment if provided
+        if equipment:
+            try:
+                equipment_data = json.loads(equipment)
+                is_valid, error_msg, equipment_list = validate_equipment_list(
+                    equipment_data if isinstance(equipment_data, list) else [equipment_data]
+                )
+                if not is_valid:
+                    raise ValidationError(error_msg or "Invalid equipment list")
+                logger.info(f"Equipment provided: {equipment_list}")
+            except json.JSONDecodeError:
+                # Try as single string
+                is_valid, error_msg, equipment_list = validate_equipment_list([equipment])
+                if not is_valid:
+                    raise ValidationError(error_msg or "Invalid equipment format")
+        
+        # Validate location if provided
+        if location:
+            is_valid, error_msg = validate_location(location)
+            if not is_valid:
+                raise ValidationError(error_msg or "Invalid location format")
+            logger.info(f"Location provided: {location}")
+        
         orchestrator = get_orchestrator()
         
         # Build query for orchestrator
@@ -142,14 +191,9 @@ async def generate_workout_endpoint(
             image_data_uri = f"data:image/jpeg;base64,{image_base64}"
             query_parts.append(f"I've uploaded an image of my available equipment: {image_data_uri}")
         
-        if equipment:
-            import json
-            try:
-                equipment_list = json.loads(equipment)
-                equipment_text = ", ".join(equipment_list) if isinstance(equipment_list, list) else equipment
-                query_parts.append(f"Available equipment: {equipment_text}")
-            except json.JSONDecodeError:
-                query_parts.append(f"Available equipment: {equipment}")
+        if equipment_list:
+            equipment_text = ", ".join(equipment_list)
+            query_parts.append(f"Available equipment: {equipment_text}")
         
         if location:
             query_parts.append(f"Location: {location}")
@@ -159,20 +203,23 @@ async def generate_workout_endpoint(
         query = " ".join(query_parts)
         
         # Get response from orchestrator
+        logger.info(f"Calling orchestrator to generate workout")
         response = orchestrator(query)
         
+        logger.info("Workout generation completed successfully")
         return JSONResponse(content={
             "workout_plan": str(response),
-            "equipment": equipment if equipment else "detected from image",
+            "equipment": equipment_list if equipment_list else "detected from image",
             "location": location,
             "has_image": image is not None
         })
         
+    except ValidationError as e:
+        logger.warning(f"Validation error in /generate-workout: {e.message}")
+        return handle_exception(e, context="generate_workout_endpoint")
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal server error: {str(e)}"
-        )
+        logger.error(f"Unexpected error in /generate-workout: {str(e)}", exc_info=True)
+        return handle_exception(e, context="generate_workout_endpoint")
 
 
 @app.get("/")
@@ -191,13 +238,16 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
+    logger.debug("Health check requested")
     try:
         orchestrator = get_orchestrator()
+        logger.debug("Health check passed")
         return {
             "status": "healthy",
             "orchestrator": "initialized"
         }
     except Exception as e:
+        logger.error(f"Health check failed: {str(e)}", exc_info=True)
         return {
             "status": "unhealthy",
             "error": str(e)

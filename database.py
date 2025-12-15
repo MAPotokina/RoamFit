@@ -1,10 +1,14 @@
 """Database operations for ROAMFIT."""
 import sqlite3
 import json
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional
 from contextlib import contextmanager
 from config import get_config
+from utils.exceptions import DatabaseError
+
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -79,17 +83,28 @@ def save_workout(
     completed: bool = False
 ) -> int:
     """Save a workout to database. Returns workout ID."""
-    date = datetime.now().isoformat()
-    equipment_json = json.dumps(equipment)
-    workout_plan_json = json.dumps(workout_plan)
-    
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("""
-            INSERT INTO workouts (date, equipment, workout_plan, location, completed)
-            VALUES (?, ?, ?, ?, ?)
-        """, (date, equipment_json, workout_plan_json, location, 1 if completed else 0))
-        return cursor.lastrowid
+    try:
+        logger.info(f"Saving workout: equipment={equipment}, location={location}, completed={completed}")
+        date = datetime.now().isoformat()
+        equipment_json = json.dumps(equipment)
+        workout_plan_json = json.dumps(workout_plan)
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("""
+                INSERT INTO workouts (date, equipment, workout_plan, location, completed)
+                VALUES (?, ?, ?, ?, ?)
+            """, (date, equipment_json, workout_plan_json, location, 1 if completed else 0))
+            workout_id = cursor.lastrowid
+            logger.info(f"Workout saved successfully with ID: {workout_id}")
+            return workout_id
+    except Exception as e:
+        logger.error(f"Failed to save workout: {str(e)}", exc_info=True)
+        raise DatabaseError(
+            message=f"Failed to save workout: {str(e)}",
+            operation="save_workout",
+            details={"equipment": equipment, "location": location}
+        )
 
 
 def get_last_workout() -> Optional[Dict]:
@@ -225,10 +240,24 @@ def update_workout(
 
 def delete_workout(workout_id: int) -> bool:
     """Delete workout by ID. Returns True if successful."""
-    with get_db_connection() as conn:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM workouts WHERE id = ?", (workout_id,))
-        return cursor.rowcount > 0
+    try:
+        logger.info(f"Deleting workout ID: {workout_id}")
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM workouts WHERE id = ?", (workout_id,))
+            success = cursor.rowcount > 0
+            if success:
+                logger.info(f"Workout {workout_id} deleted successfully")
+            else:
+                logger.warning(f"Workout {workout_id} not found for deletion")
+            return success
+    except Exception as e:
+        logger.error(f"Failed to delete workout {workout_id}: {str(e)}", exc_info=True)
+        raise DatabaseError(
+            message=f"Failed to delete workout: {str(e)}",
+            operation="delete_workout",
+            details={"workout_id": workout_id}
+        )
 
 
 def save_equipment_detection(

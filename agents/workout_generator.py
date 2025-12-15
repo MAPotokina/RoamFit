@@ -1,8 +1,11 @@
 """Workout Generator Agent for ROAMFIT."""
 import json
+import logging
 from typing import List, Dict, Any, Optional
 from utils.llm import call_llm
 from database import save_workout
+
+logger = logging.getLogger(__name__)
 
 
 def generate_workout(
@@ -12,7 +15,10 @@ def generate_workout(
     save_to_db: bool = True
 ) -> Dict[str, Any]:
     """Generate workout plan based on equipment and history."""
+    logger.info(f"Generating workout: equipment={equipment}, location={location}, has_history={workout_history is not None}")
+    
     if not equipment:
+        logger.warning("No equipment provided for workout generation")
         return {
             "exercises": [],
             "duration_minutes": 0,
@@ -113,10 +119,13 @@ JSON response:"""
                     completed=False
                 )
                 workout_plan["workout_id"] = workout_id
+                logger.info(f"Workout generated and saved with ID: {workout_id}")
             except Exception as e:
                 # Don't fail if saving fails, just log it
+                logger.error(f"Failed to save workout to database: {str(e)}", exc_info=True)
                 workout_plan["save_error"] = str(e)
         
+        logger.info("Workout generation completed successfully")
         return workout_plan
         
     except json.JSONDecodeError as e:
