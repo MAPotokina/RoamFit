@@ -95,7 +95,7 @@ def call_llm(
 def call_vision(
     image_path: str,
     prompt: str,
-    model: str = "gpt-4-vision-preview",
+    model: str = "gpt-4o",
     agent_name: str = "unknown"
 ) -> str:
     """Call vision API with image. Returns response text."""

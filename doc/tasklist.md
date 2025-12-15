@@ -8,7 +8,7 @@
 | 2. Database Foundation | ✅ Complete | SQLite schema and basic operations | ✅ Passed |
 | 3. LLM Utilities | ✅ Complete | LLM wrapper functions with logging | ✅ Passed |
 | 4. Workout Summary Agent | ✅ Complete | First agent - tracks workout history | ✅ Passed |
-| 5. Equipment Detection Agent | ⏳ Not Started | Vision-based equipment detection | - |
+| 5. Equipment Detection Agent | ✅ Complete | Vision-based equipment detection | ✅ Passed |
 | 6. Workout Generator Agent | ⏳ Not Started | Generates workouts from equipment/history | - |
 | 7. Orchestrator Agent | ⏳ Not Started | Coordinates agents using Strands | - |
 | 8. API Layer | ⏳ Not Started | FastAPI endpoints | - |
@@ -83,11 +83,11 @@
 
 **Goal**: Detect equipment from photos using vision API
 
-- [ ] Create `agents/equipment_detection.py`
-- [ ] Implement `detect_equipment(image_path)` - uses `call_vision()`
-- [ ] Parse LLM response to extract equipment list (JSON)
-- [ ] Save detection to database
-- [ ] Test: Upload test image, verify equipment detection, check database entry
+- [x] Create `agents/equipment_detection.py`
+- [x] Implement `detect_equipment(image_path)` - uses `call_vision()`
+- [x] Parse LLM response to extract equipment list (JSON)
+- [x] Save detection to database
+- [x] Test: Upload test image, verify equipment detection, check database entry
 
 **Test**: Upload gym photo, verify agent returns list of detected equipment, check DB entry
 
