@@ -136,31 +136,5 @@ def generate_charts(chart_type: str = "frequency") -> Dict[str, str]:
     }
 
 
-# MCP Server setup
-try:
-    from mcp import Server, Tool
-    
-    server = Server("graph_trends")
-    
-    @server.tool()
-    def get_workout_stats_tool() -> Dict[str, Any]:
-        """Get workout statistics from database."""
-        return get_workout_stats()
-    
-    @server.tool()
-    def generate_charts_tool(chart_type: str = "frequency") -> Dict[str, str]:
-        """
-        Generate workout progress charts.
-        
-        Args:
-            chart_type: Type of chart ("frequency" or "equipment")
-        """
-        return generate_charts(chart_type)
-    
-    # Export server for registration
-    graph_trends_server = server
-    
-except ImportError:
-    # Fallback if MCP not available - just export functions
-    graph_trends_server = None
+# Note: MCP server implementation is in agents/graph_trends_mcp.py
 

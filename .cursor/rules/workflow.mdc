@@ -1,0 +1,80 @@
+---
+alwaysApply: true
+---
+
+# Development Workflow
+
+> **Reference**: Follow [vision.md](../vision.md) for technical architecture and [conventions.md](../conventions.md) for code standards.
+
+## Workflow Rules
+
+1. **Follow the plan strictly** - Work through [tasklist.md](./tasklist.md) iterations sequentially
+2. **One iteration at a time** - Complete each iteration fully before moving to the next
+3. **Get approval before implementation** - Propose solution with code snippets, wait for approval
+4. **Test after implementation** - Verify iteration test criteria before marking complete
+5. **Update progress** - Mark tasks and update progress table after completion
+6. **Commit after each iteration** - Commit changes with clear message
+
+## Step-by-Step Process
+
+### Before Starting an Iteration
+
+1. Read the iteration goal and tasks in [tasklist.md](./tasklist.md)
+2. Review relevant sections in [vision.md](../vision.md) and [conventions.md](../conventions.md)
+3. **Propose solution** with:
+   - Code snippets showing approach
+   - File structure changes
+   - Key implementation details
+4. **Wait for approval** before implementing
+
+### During Implementation
+
+1. Implement approved solution
+2. Follow code conventions from [conventions.md](../conventions.md)
+3. Keep it simple (KISS principle)
+4. Write minimal code that works
+
+### After Implementation
+
+1. **Run the test** specified in the iteration
+2. **Verify functionality** works as expected
+3. **Wait for confirmation** from user
+4. **Update tasklist.md**:
+   - Mark completed tasks with `[x]`
+   - Update progress table status (⏳ → 🚧 → ✅)
+   - Update test status
+5. **Commit to repository**:
+   - Clear commit message: `feat: Complete iteration X - [description]`
+   - Include relevant files only
+
+### Moving to Next Iteration
+
+1. **Agree on next iteration** with user
+2. **Repeat process** from "Before Starting an Iteration"
+
+## Important Notes
+
+- **No skipping iterations** - Each builds on the previous
+- **No over-engineering** - MVP first, simplest solution
+- **Test before marking complete** - Verify iteration test criteria
+- **Ask questions** if requirements are unclear
+- **Reference vision.md** for architecture decisions
+
+## Commit Message Format
+
+```
+feat: Complete iteration X - [Brief description]
+
+- [List key changes]
+- [Any important notes]
+```
+
+Example:
+```
+feat: Complete iteration 3 - LLM utilities with logging
+
+- Added call_llm() and call_vision() wrapper functions
+- Implemented logging to logs/llm_calls.log
+- Added error handling with single retry
+```
+

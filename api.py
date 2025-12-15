@@ -1,19 +1,102 @@
-"""FastAPI application for ROAMFIT."""
+"""FastAPI application for ROAMFIT with Strands."""
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.responses import JSONResponse
-from typing import Optional, List
-import json
+from fastapi.middleware.cors import CORSMiddleware
+from typing import Optional
+import base64
 import tempfile
 import os
 from pathlib import Path
 
-from agents.orchestrator import generate_workout_flow
-from agents.equipment_detection import detect_equipment
-from agents.workout_summary import summarize_workout_history
-from agents.graph_trends import get_workout_stats, generate_charts
-from agents.location_activity import find_nearby_gyms, find_running_tracks
+from agents.strands_orchestrator import create_roamfit_orchestrator
 
-app = FastAPI(title="ROAMFIT API", version="1.0.0")
+app = FastAPI(title="ROAMFIT API (Strands)", version="2.0.0")
+
+# Add CORS middleware for Streamlit
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Initialize orchestrator (singleton)
+_orchestrator = None
+
+
+def get_orchestrator():
+    """Get or create the orchestrator instance."""
+    global _orchestrator
+    if _orchestrator is None:
+        _orchestrator = create_roamfit_orchestrator()
+    return _orchestrator
+
+
+@app.post("/chat")
+async def chat_endpoint(
+    message: str = Form(...),
+    image: Optional[UploadFile] = File(None)
+):
+    """
+    Chat endpoint for interactive conversations with ROAMFIT.
+    
+    Required:
+    - message: User's message/query
+    
+    Optional:
+    - image: Equipment photo file (jpg, jpeg, png)
+    """
+    # Input validation
+    if not message or not message.strip():
+        raise HTTPException(
+            status_code=400,
+            detail="message parameter is required and cannot be empty"
+        )
+    
+    if image:
+        file_size = getattr(image, 'size', None) or 0
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(
+                status_code=400,
+                detail="Image file too large. Maximum size is 10MB"
+            )
+        
+        allowed_types = ["image/jpeg", "image/jpg", "image/png"]
+        content_type = getattr(image, 'content_type', None) or ""
+        if content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
+            )
+    
+    try:
+        orchestrator = get_orchestrator()
+        
+        # Prepare query
+        query = message.strip()
+        
+        # Handle image if provided
+        if image:
+            content = await image.read()
+            image_base64 = base64.b64encode(content).decode("utf-8")
+            image_data_uri = f"data:image/jpeg;base64,{image_base64}"
+            query = f"I've uploaded an image of my available equipment. Please detect the equipment from this image: {image_data_uri}. {query}"
+        
+        # Get response from orchestrator
+        response = orchestrator(query)
+        
+        return JSONResponse(content={
+            "response": str(response),
+            "message": message,
+            "has_image": image is not None
+        })
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
+        )
 
 
 @app.post("/generate-workout")
@@ -23,7 +106,7 @@ async def generate_workout_endpoint(
     location: Optional[str] = Form(None)
 ):
     """
-    Generate workout from image or equipment list.
+    Generate workout from image or equipment list (using Strands orchestrator).
     
     Either provide:
     - image: Equipment photo file (jpg, jpeg, png)
@@ -32,8 +115,6 @@ async def generate_workout_endpoint(
     Optional:
     - location: Location string (e.g., "Hotel Gym, Room 205")
     """
-    image_path = None
-    
     # Input validation
     if not image and not equipment:
         raise HTTPException(
@@ -50,147 +131,59 @@ async def generate_workout_endpoint(
             )
     
     try:
-        # Handle image upload
-        if image:
-            # Save uploaded file temporarily
-            suffix = Path(image.filename).suffix if image.filename else ".jpg"
-            with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
-                content = await image.read()
-                tmp_file.write(content)
-                image_path = tmp_file.name
+        orchestrator = get_orchestrator()
         
-        # Parse equipment list if provided
-        equipment_list = None
+        # Build query for orchestrator
+        query_parts = []
+        
+        if image:
+            content = await image.read()
+            image_base64 = base64.b64encode(content).decode("utf-8")
+            image_data_uri = f"data:image/jpeg;base64,{image_base64}"
+            query_parts.append(f"I've uploaded an image of my available equipment: {image_data_uri}")
+        
         if equipment:
+            import json
             try:
                 equipment_list = json.loads(equipment)
-                if not isinstance(equipment_list, list):
-                    raise ValueError("equipment must be a JSON array")
+                equipment_text = ", ".join(equipment_list) if isinstance(equipment_list, list) else equipment
+                query_parts.append(f"Available equipment: {equipment_text}")
             except json.JSONDecodeError:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Invalid JSON format for equipment parameter"
-                )
+                query_parts.append(f"Available equipment: {equipment}")
         
-        # Call orchestrator
-        result = generate_workout_flow(
-            image_path=image_path,
-            location=location,
-            equipment=equipment_list
-        )
+        if location:
+            query_parts.append(f"Location: {location}")
         
-        # Clean up temporary file
-        if image_path and os.path.exists(image_path):
-            os.unlink(image_path)
+        query_parts.append("Please generate a personalized workout plan based on the available equipment and my workout history.")
         
-        # Check for errors
-        if result.get("error"):
-            raise HTTPException(status_code=400, detail=result["error"])
+        query = " ".join(query_parts)
         
-        return JSONResponse(content=result)
+        # Get response from orchestrator
+        response = orchestrator(query)
         
-    except HTTPException:
-        raise
+        return JSONResponse(content={
+            "workout_plan": str(response),
+            "equipment": equipment if equipment else "detected from image",
+            "location": location,
+            "has_image": image is not None
+        })
+        
     except Exception as e:
-        # Clean up temporary file on error
-        if image_path and os.path.exists(image_path):
-            os.unlink(image_path)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-@app.post("/detect-equipment")
-async def detect_equipment_endpoint(
-    image: UploadFile = File(...),
-    location: Optional[str] = Form(None)
-):
-    """
-    Detect equipment from image.
-    
-    Required:
-    - image: Equipment photo file (jpg, jpeg, png)
-    
-    Optional:
-    - location: Location string (e.g., "Hotel Gym")
-    """
-    image_path = None
-    
-    # Input validation
-    file_size = getattr(image, 'size', None) or 0
-    if file_size > 10 * 1024 * 1024:  # 10MB limit
         raise HTTPException(
-            status_code=400,
-            detail="Image file too large. Maximum size is 10MB"
+            status_code=500,
+            detail=f"Internal server error: {str(e)}"
         )
-    
-    allowed_types = ["image/jpeg", "image/jpg", "image/png"]
-    content_type = getattr(image, 'content_type', None) or ""
-    if content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
-        )
-    
-    try:
-        # Save uploaded file temporarily
-        suffix = Path(image.filename).suffix if image.filename else ".jpg"
-        with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp_file:
-            content = await image.read()
-            tmp_file.write(content)
-            image_path = tmp_file.name
-        
-        # Call equipment detection agent
-        result = detect_equipment(image_path, location=location or None)  # type: ignore
-        
-        # Clean up temporary file
-        if image_path and os.path.exists(image_path):
-            os.unlink(image_path)
-        
-        return JSONResponse(content=result)
-        
-    except FileNotFoundError as e:
-        if image_path and os.path.exists(image_path):
-            os.unlink(image_path)
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        # Clean up temporary file on error
-        if image_path and os.path.exists(image_path):
-            os.unlink(image_path)
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-@app.get("/workout-history")
-async def workout_history_endpoint(limit: int = 5):
-    """
-    Get workout history summary.
-    
-    Optional:
-    - limit: Number of recent workouts to include (default: 5, max: 50)
-    """
-    try:
-        # Input validation
-        if limit < 1 or limit > 50:
-            raise HTTPException(
-                status_code=400,
-                detail="limit must be between 1 and 50"
-            )
-        
-        result = summarize_workout_history(limit=limit)
-        return JSONResponse(content=result)
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 
 @app.get("/")
 async def root():
     """Root endpoint."""
     return {
-        "message": "ROAMFIT API",
-        "version": "1.0.0",
+        "message": "ROAMFIT API (Strands)",
+        "version": "2.0.0",
         "endpoints": {
+            "chat": "/chat",
             "generate_workout": "/generate-workout",
-            "detect_equipment": "/detect-equipment",
-            "workout_history": "/workout-history"
         }
     }
 
@@ -198,95 +191,15 @@ async def root():
 @app.get("/health")
 async def health():
     """Health check endpoint."""
-    return {"status": "healthy"}
-
-
-@app.get("/progress")
-async def progress_endpoint(chart_type: str = "frequency"):
-    """
-    Get workout progress statistics and charts.
-    
-    Optional:
-    - chart_type: Type of chart ("frequency" or "equipment", default: "frequency")
-    """
     try:
-        if chart_type not in ["frequency", "equipment"]:
-            raise HTTPException(
-                status_code=400,
-                detail="chart_type must be 'frequency' or 'equipment'"
-            )
-        
-        stats = get_workout_stats()
-        chart = generate_charts(chart_type)
-        
-        return JSONResponse(content={
-            "stats": stats,
-            "chart": chart
-        })
-        
+        orchestrator = get_orchestrator()
+        return {
+            "status": "healthy",
+            "orchestrator": "initialized"
+        }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
-
-
-@app.get("/find-nearby")
-async def find_nearby_endpoint(
-    location: str,
-    place_type: str = "gyms",
-    radius_km: float = 2.0,
-    limit: int = 10
-):
-    """
-    Find nearby gyms or running tracks.
-    
-    Required:
-    - location: Location string (address, city, etc., e.g., "New York, NY")
-    
-    Optional:
-    - place_type: "gyms" or "tracks" (default: "gyms")
-    - radius_km: Search radius in kilometers (default: 2.0, max: 50)
-    - limit: Maximum number of results (default: 10, max: 50)
-    """
-    try:
-        # Input validation
-        if not location or not location.strip():
-            raise HTTPException(
-                status_code=400,
-                detail="location parameter is required and cannot be empty"
-            )
-        
-        if radius_km < 0.1 or radius_km > 50:
-            raise HTTPException(
-                status_code=400,
-                detail="radius_km must be between 0.1 and 50"
-            )
-        
-        if limit < 1 or limit > 50:
-            raise HTTPException(
-                status_code=400,
-                detail="limit must be between 1 and 50"
-            )
-        
-        if place_type not in ["gyms", "tracks"]:
-            raise HTTPException(
-                status_code=400,
-                detail="place_type must be 'gyms' or 'tracks'"
-            )
-        
-        if place_type == "gyms":
-            results = find_nearby_gyms(location.strip(), radius_km, limit)
-        else:  # tracks
-            results = find_running_tracks(location.strip(), radius_km, limit)
-        
-        return JSONResponse(content={
-            "location": location,
-            "place_type": place_type,
-            "radius_km": radius_km,
-            "results": results,
-            "count": len(results)
-        })
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+        return {
+            "status": "unhealthy",
+            "error": str(e)
+        }
 

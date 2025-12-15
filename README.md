@@ -163,8 +163,8 @@ Find nearby gyms or running tracks.
 
 ```
 roamfit/
-├── main.py                 # Streamlit UI
-├── api.py                  # FastAPI endpoints
+├── main.py                 # Streamlit Chat UI (Strands)
+├── api.py                  # FastAPI endpoints (Strands)
 ├── config.py               # Configuration
 ├── database.py             # Database operations
 ├── agents/

@@ -123,48 +123,5 @@ def find_running_tracks(
     return unique_places[:limit]
 
 
-# MCP Server setup
-try:
-    from mcp import Server, Tool
-    
-    server = Server("location_activity")
-    
-    @server.tool()
-    def find_nearby_gyms_tool(
-        location: str,
-        radius_km: float = 2.0,
-        limit: int = 10
-    ) -> List[Dict[str, Any]]:
-        """
-        Find nearby gyms from location.
-        
-        Args:
-            location: Location string (address, city, etc.)
-            radius_km: Search radius in kilometers (default: 2.0)
-            limit: Maximum number of results (default: 10)
-        """
-        return find_nearby_gyms(location, radius_km, limit)
-    
-    @server.tool()
-    def find_running_tracks_tool(
-        location: str,
-        radius_km: float = 2.0,
-        limit: int = 10
-    ) -> List[Dict[str, Any]]:
-        """
-        Find nearby running tracks, parks, and trails.
-        
-        Args:
-            location: Location string (address, city, etc.)
-            radius_km: Search radius in kilometers (default: 2.0)
-            limit: Maximum number of results (default: 10)
-        """
-        return find_running_tracks(location, radius_km, limit)
-    
-    # Export server for registration
-    location_activity_server = server
-    
-except ImportError:
-    # Fallback if MCP not available - just export functions
-    location_activity_server = None
+# Note: MCP server implementation is in agents/location_activity_mcp.py
 
