@@ -119,7 +119,7 @@ with st.sidebar:
     """)
 
 # Tabs
-tab1, tab2, tab3, tab4 = st.tabs(["🏋️ Generate Workout", "📊 Workout History", "🔍 Detect Equipment", "📈 Progress"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["🏋️ Generate Workout", "📊 Workout History", "🔍 Detect Equipment", "📈 Progress", "📍 Find Nearby"])
 
 # Tab 1: Generate Workout
 with tab1:
@@ -304,4 +304,59 @@ with tab4:
                     image_data = base64.b64decode(chart["image_base64"])
                     img = Image.open(BytesIO(image_data))
                     st.image(img, caption=f"{chart.get('chart_type', 'Chart').title()} Chart", use_container_width=True)
+
+# Tab 5: Find Nearby
+with tab5:
+    st.header("Find Nearby Gyms & Tracks")
+    
+    location_input = st.text_input(
+        "Location",
+        placeholder="New York, NY or 123 Main St, San Francisco",
+        help="Enter an address, city, or location"
+    )
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        place_type = st.radio(
+            "Search for",
+            ["gyms", "tracks"],
+            format_func=lambda x: "🏋️ Gyms" if x == "gyms" else "🏃 Running Tracks",
+            horizontal=True
+        )
+    with col2:
+        radius_km = st.slider("Search Radius (km)", 0.5, 10.0, 2.0, 0.5)
+    
+    limit = st.slider("Maximum Results", 5, 20, 10)
+    
+    if st.button("🔍 Search", type="primary", use_container_width=True):
+        if not location_input:
+            st.warning("Please enter a location")
+        else:
+            with st.spinner(f"Searching for nearby {place_type}..."):
+                result = call_api(
+                    f"/find-nearby?location={location_input}&place_type={place_type}&radius_km={radius_km}&limit={limit}"
+                )
+                
+                if result:
+                    st.success(f"✅ Found {result.get('count', 0)} {place_type}")
+                    
+                    results = result.get("results", [])
+                    if results:
+                        for i, place in enumerate(results, 1):
+                            with st.container():
+                                col1, col2 = st.columns([3, 1])
+                                with col1:
+                                    st.markdown(f"**{i}. {place.get('name', 'Unknown')}**")
+                                    st.caption(place.get("address", "Address not available"))
+                                with col2:
+                                    distance = place.get("distance_km", 0)
+                                    if distance < 1:
+                                        st.metric("Distance", f"{place.get('distance_m', 0):.0f}m")
+                                    else:
+                                        st.metric("Distance", f"{distance:.2f}km")
+                                
+                                if i < len(results):
+                                    st.divider()
+                    else:
+                        st.info(f"No {place_type} found within {radius_km}km of {location_input}")
 

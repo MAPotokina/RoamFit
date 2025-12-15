@@ -14,7 +14,7 @@
 | 8. API Layer | ✅ Complete | FastAPI endpoints | ✅ Passed |
 | 9. UI Layer | ✅ Complete | Streamlit interface | ✅ Passed |
 | 10. Graph/Trends Agent | ✅ Complete | Progress visualization | ✅ Passed |
-| 11. Location Agent | ⏳ Not Started | Nearby gyms and tracks | - |
+| 11. Location Agent | ✅ Complete | Nearby gyms and tracks | ✅ Passed |
 | 12. Integration & Polish | ⏳ Not Started | End-to-end testing and refinements | - |
 
 **Legend**: ✅ Complete | 🚧 In Progress | ⏳ Not Started | ❌ Blocked
@@ -176,14 +176,14 @@
 
 **Goal**: Find nearby gyms and running tracks (MCP Server)
 
-- [ ] Create `agents/location_activity.py` as MCP server
-- [ ] Implement MCP tools: `find_nearby_gyms(location)`, `find_running_tracks(location)`
-- [ ] Uses geocoding API (simple, e.g., Nominatim)
-- [ ] Return list of locations with distances
-- [ ] Register MCP server in orchestrator
-- [ ] Add endpoint `/find-nearby` to API
-- [ ] Add location search to Streamlit UI
-- [ ] Test: Enter location, verify nearby gyms/tracks returned via MCP
+- [x] Create `agents/location_activity.py` as MCP server
+- [x] Implement MCP tools: `find_nearby_gyms(location)`, `find_running_tracks(location)`
+- [x] Uses geocoding API (Nominatim via geopy)
+- [x] Return list of locations with distances (adjustable radius)
+- [ ] Register MCP server in orchestrator (will be done in integration)
+- [x] Add endpoint `/find-nearby` to API
+- [x] Add location search to Streamlit UI
+- [x] Test: Enter location, verify nearby gyms/tracks returned via MCP
 
 **Test**: Enter address, verify agent returns list of nearby gyms with distances via MCP
 

@@ -11,6 +11,7 @@ from agents.orchestrator import generate_workout_flow
 from agents.equipment_detection import detect_equipment
 from agents.workout_summary import summarize_workout_history
 from agents.graph_trends import get_workout_stats, generate_charts
+from agents.location_activity import find_nearby_gyms, find_running_tracks
 
 app = FastAPI(title="ROAMFIT API", version="1.0.0")
 
@@ -191,6 +192,61 @@ async def progress_endpoint(chart_type: str = "frequency"):
             "chart": chart
         })
         
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
+
+
+@app.get("/find-nearby")
+async def find_nearby_endpoint(
+    location: str,
+    place_type: str = "gyms",
+    radius_km: float = 2.0,
+    limit: int = 10
+):
+    """
+    Find nearby gyms or running tracks.
+    
+    Required:
+    - location: Location string (address, city, etc.)
+    
+    Optional:
+    - place_type: "gyms" or "tracks" (default: "gyms")
+    - radius_km: Search radius in kilometers (default: 2.0)
+    - limit: Maximum number of results (default: 10)
+    """
+    try:
+        if radius_km < 0.1 or radius_km > 50:
+            raise HTTPException(
+                status_code=400,
+                detail="radius_km must be between 0.1 and 50"
+            )
+        
+        if limit < 1 or limit > 50:
+            raise HTTPException(
+                status_code=400,
+                detail="limit must be between 1 and 50"
+            )
+        
+        if place_type == "gyms":
+            results = find_nearby_gyms(location, radius_km, limit)
+        elif place_type == "tracks":
+            results = find_running_tracks(location, radius_km, limit)
+        else:
+            raise HTTPException(
+                status_code=400,
+                detail="place_type must be 'gyms' or 'tracks'"
+            )
+        
+        return JSONResponse(content={
+            "location": location,
+            "place_type": place_type,
+            "radius_km": radius_km,
+            "results": results,
+            "count": len(results)
+        })
+        
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
