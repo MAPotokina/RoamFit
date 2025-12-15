@@ -6,7 +6,7 @@
 |-----------|--------|-------------|-------------|
 | 1. Project Setup | ✅ Complete | Project structure, dependencies, config | ✅ Passed |
 | 2. Database Foundation | ✅ Complete | SQLite schema and basic operations | ✅ Passed |
-| 3. LLM Utilities | ⏳ Not Started | LLM wrapper functions with logging | - |
+| 3. LLM Utilities | ✅ Complete | LLM wrapper functions with logging | ✅ Passed |
 | 4. Workout Summary Agent | ⏳ Not Started | First agent - tracks workout history | - |
 | 5. Equipment Detection Agent | ⏳ Not Started | Vision-based equipment detection | - |
 | 6. Workout Generator Agent | ⏳ Not Started | Generates workouts from equipment/history | - |
@@ -55,11 +55,11 @@
 
 **Goal**: Create LLM wrapper functions with logging
 
-- [ ] Create `utils/llm.py` with `call_llm()` function
-- [ ] Create `call_vision()` function for image analysis
-- [ ] Implement logging to `logs/llm_calls.log` (timestamp, model, tokens, success)
-- [ ] Add error handling with single retry
-- [ ] Test: Make test LLM call, verify logging, check response format
+- [x] Create `utils/llm.py` with `call_llm()` function
+- [x] Create `call_vision()` function for image analysis
+- [x] Implement logging to `logs/llm_calls.log` (timestamp, model, tokens, success)
+- [x] Add error handling with single retry
+- [x] Test: Make test LLM call, verify logging, check response format
 
 **Test**: Call `call_llm("Say hello")` - verify response and log entry created
 
