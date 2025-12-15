@@ -1,6 +1,6 @@
 """Streamlit UI for ROAMFIT."""
 import streamlit as st
-import requests
+import requests  # type: ignore
 import json
 from pathlib import Path
 from typing import Optional
@@ -119,7 +119,7 @@ with st.sidebar:
     """)
 
 # Tabs
-tab1, tab2, tab3 = st.tabs(["🏋️ Generate Workout", "📊 Workout History", "🔍 Detect Equipment"])
+tab1, tab2, tab3, tab4 = st.tabs(["🏋️ Generate Workout", "📊 Workout History", "🔍 Detect Equipment", "📈 Progress"])
 
 # Tab 1: Generate Workout
 with tab1:
@@ -263,4 +263,45 @@ with tab3:
                     
                     if result.get("detection_id"):
                         st.caption(f"Detection ID: {result['detection_id']}")
+
+# Tab 4: Progress
+with tab4:
+    st.header("Workout Progress")
+    
+    chart_type = st.radio(
+        "Chart Type",
+        ["frequency", "equipment"],
+        format_func=lambda x: "Workout Frequency" if x == "frequency" else "Equipment Usage",
+        horizontal=True
+    )
+    
+    if st.button("📈 Load Progress", type="primary", use_container_width=True):
+        with st.spinner("Loading progress data..."):
+            result = call_api(f"/progress?chart_type={chart_type}")
+            
+            if result:
+                st.success("✅ Progress loaded")
+                
+                # Display stats
+                stats = result.get("stats", {})
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Total Workouts", stats.get("total_workouts", 0))
+                with col2:
+                    st.metric("Completed", stats.get("completed_workouts", 0))
+                with col3:
+                    st.metric("Workouts/Week", stats.get("workouts_per_week", 0))
+                with col4:
+                    st.metric("Completion Rate", f"{stats.get('completion_rate', 0)}%")
+                
+                # Display chart
+                chart = result.get("chart", {})
+                if chart.get("image_base64"):
+                    import base64
+                    from PIL import Image
+                    from io import BytesIO
+                    
+                    image_data = base64.b64decode(chart["image_base64"])
+                    img = Image.open(BytesIO(image_data))
+                    st.image(img, caption=f"{chart.get('chart_type', 'Chart').title()} Chart", use_container_width=True)
 

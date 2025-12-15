@@ -13,7 +13,7 @@
 | 7. Orchestrator Agent | ✅ Complete | Coordinates agents using Strands | ✅ Passed |
 | 8. API Layer | ✅ Complete | FastAPI endpoints | ✅ Passed |
 | 9. UI Layer | ✅ Complete | Streamlit interface | ✅ Passed |
-| 10. Graph/Trends Agent | ⏳ Not Started | Progress visualization | - |
+| 10. Graph/Trends Agent | ✅ Complete | Progress visualization | ✅ Passed |
 | 11. Location Agent | ⏳ Not Started | Nearby gyms and tracks | - |
 | 12. Integration & Polish | ⏳ Not Started | End-to-end testing and refinements | - |
 
@@ -158,15 +158,15 @@
 
 **Goal**: Visualize workout progress (MCP Server)
 
-- [ ] Create `agents/graph_trends.py` as MCP server
-- [ ] Implement MCP tools: `get_workout_stats()`, `generate_charts()`
-- [ ] Queries database for statistics
-- [ ] Generate simple charts (matplotlib/plotly) - workout frequency, volume trends
-- [ ] Return chart data or image
-- [ ] Register MCP server in orchestrator
-- [ ] Add endpoint `/progress` to API
-- [ ] Add progress view to Streamlit UI
-- [ ] Test: Generate charts from workout data, display in UI
+- [x] Create `agents/graph_trends.py` as MCP server
+- [x] Implement MCP tools: `get_workout_stats()`, `generate_charts()`
+- [x] Queries database for statistics
+- [x] Generate simple charts (matplotlib) - workout frequency, equipment usage
+- [x] Return chart data as base64 encoded images
+- [ ] Register MCP server in orchestrator (will be done in integration)
+- [x] Add endpoint `/progress` to API
+- [x] Add progress view to Streamlit UI
+- [x] Test: Generate charts from workout data, display in UI
 
 **Test**: Create multiple workouts, call agent via MCP, verify charts display correctly in UI
 
