@@ -11,7 +11,7 @@
 | 5. Equipment Detection Agent | ✅ Complete | Vision-based equipment detection | ✅ Passed |
 | 6. Workout Generator Agent | ✅ Complete | Generates workouts from equipment/history | ✅ Passed |
 | 7. Orchestrator Agent | ✅ Complete | Coordinates agents using Strands | ✅ Passed |
-| 8. API Layer | ⏳ Not Started | FastAPI endpoints | - |
+| 8. API Layer | ✅ Complete | FastAPI endpoints | ✅ Passed |
 | 9. UI Layer | ⏳ Not Started | Streamlit interface | - |
 | 10. Graph/Trends Agent | ⏳ Not Started | Progress visualization | - |
 | 11. Location Agent | ⏳ Not Started | Nearby gyms and tracks | - |
@@ -127,12 +127,12 @@
 
 **Goal**: Create FastAPI endpoints for agent interactions
 
-- [ ] Create `api.py` with FastAPI app
-- [ ] Implement `/generate-workout` endpoint (accepts image or location)
-- [ ] Implement `/detect-equipment` endpoint
-- [ ] Implement `/workout-history` endpoint
-- [ ] Add error handling and response models
-- [ ] Test: Use curl/Postman to test all endpoints
+- [x] Create `api.py` with FastAPI app
+- [x] Implement `/generate-workout` endpoint (accepts image or equipment list)
+- [x] Implement `/detect-equipment` endpoint
+- [x] Implement `/workout-history` endpoint
+- [x] Add error handling and response models
+- [x] Test: Use curl/Postman to test all endpoints
 
 **Test**: POST to `/generate-workout` with image, verify JSON response with workout plan
 
