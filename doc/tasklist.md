@@ -113,12 +113,13 @@
 
 - [ ] Create `agents/orchestrator.py`
 - [ ] Set up Strands orchestrator agent
-- [ ] Register other agents as tools/functions
+- [ ] Register simple function agents (workout_summary, equipment_detection, workout_generator)
+- [ ] Register MCP servers (location_activity, graph_trends) - embedded, explicit registration
 - [ ] Implement `generate_workout_flow()` - coordinates equipment detection → summary → generator
 - [ ] Handle errors and return unified response
 - [ ] Test: End-to-end flow - photo → equipment → history → workout plan
 
-**Test**: Full workflow: upload photo, orchestrator calls all agents, returns complete workout plan
+**Test**: Full workflow: upload photo, orchestrator calls all agents (functions + MCP), returns complete workout plan
 
 ---
 
@@ -155,33 +156,36 @@
 
 ## Iteration 10: Graph/Trends Agent
 
-**Goal**: Visualize workout progress
+**Goal**: Visualize workout progress (MCP Server)
 
-- [ ] Create `agents/graph_trends.py`
-- [ ] Implement `get_workout_stats()` - queries database for statistics
+- [ ] Create `agents/graph_trends.py` as MCP server
+- [ ] Implement MCP tools: `get_workout_stats()`, `generate_charts()`
+- [ ] Queries database for statistics
 - [ ] Generate simple charts (matplotlib/plotly) - workout frequency, volume trends
 - [ ] Return chart data or image
+- [ ] Register MCP server in orchestrator
 - [ ] Add endpoint `/progress` to API
 - [ ] Add progress view to Streamlit UI
 - [ ] Test: Generate charts from workout data, display in UI
 
-**Test**: Create multiple workouts, call agent, verify charts display correctly in UI
+**Test**: Create multiple workouts, call agent via MCP, verify charts display correctly in UI
 
 ---
 
 ## Iteration 11: Location Agent
 
-**Goal**: Find nearby gyms and running tracks
+**Goal**: Find nearby gyms and running tracks (MCP Server)
 
-- [ ] Create `agents/location_activity.py`
-- [ ] Implement `find_nearby_gyms(location)` - uses geocoding API (simple, e.g., Nominatim)
-- [ ] Implement `find_running_tracks(location)` - searches for parks/tracks
+- [ ] Create `agents/location_activity.py` as MCP server
+- [ ] Implement MCP tools: `find_nearby_gyms(location)`, `find_running_tracks(location)`
+- [ ] Uses geocoding API (simple, e.g., Nominatim)
 - [ ] Return list of locations with distances
+- [ ] Register MCP server in orchestrator
 - [ ] Add endpoint `/find-nearby` to API
 - [ ] Add location search to Streamlit UI
-- [ ] Test: Enter location, verify nearby gyms/tracks returned
+- [ ] Test: Enter location, verify nearby gyms/tracks returned via MCP
 
-**Test**: Enter address, verify agent returns list of nearby gyms with distances
+**Test**: Enter address, verify agent returns list of nearby gyms with distances via MCP
 
 ---
 
