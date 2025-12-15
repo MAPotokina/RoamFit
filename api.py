@@ -26,13 +26,28 @@ async def generate_workout_endpoint(
     Generate workout from image or equipment list.
     
     Either provide:
-    - image: Equipment photo file
-    - equipment: JSON string array of equipment names
+    - image: Equipment photo file (jpg, jpeg, png)
+    - equipment: JSON string array of equipment names (e.g., ["dumbbells", "bench"])
     
     Optional:
-    - location: Location string
+    - location: Location string (e.g., "Hotel Gym, Room 205")
     """
     image_path = None
+    
+    # Input validation
+    if not image and not equipment:
+        raise HTTPException(
+            status_code=400,
+            detail="Either 'image' file or 'equipment' JSON array must be provided"
+        )
+    
+    if image:
+        file_size = getattr(image, 'size', None) or 0
+        if file_size > 10 * 1024 * 1024:  # 10MB limit
+            raise HTTPException(
+                status_code=400,
+                detail="Image file too large. Maximum size is 10MB"
+            )
     
     try:
         # Handle image upload
@@ -92,12 +107,28 @@ async def detect_equipment_endpoint(
     Detect equipment from image.
     
     Required:
-    - image: Equipment photo file
+    - image: Equipment photo file (jpg, jpeg, png)
     
     Optional:
-    - location: Location string
+    - location: Location string (e.g., "Hotel Gym")
     """
     image_path = None
+    
+    # Input validation
+    file_size = getattr(image, 'size', None) or 0
+    if file_size > 10 * 1024 * 1024:  # 10MB limit
+        raise HTTPException(
+            status_code=400,
+            detail="Image file too large. Maximum size is 10MB"
+        )
+    
+    allowed_types = ["image/jpeg", "image/jpg", "image/png"]
+    content_type = getattr(image, 'content_type', None) or ""
+    if content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file type. Allowed types: {', '.join(allowed_types)}"
+        )
     
     try:
         # Save uploaded file temporarily
@@ -133,9 +164,10 @@ async def workout_history_endpoint(limit: int = 5):
     Get workout history summary.
     
     Optional:
-    - limit: Number of recent workouts to include (default: 5)
+    - limit: Number of recent workouts to include (default: 5, max: 50)
     """
     try:
+        # Input validation
         if limit < 1 or limit > 50:
             raise HTTPException(
                 status_code=400,
@@ -207,14 +239,21 @@ async def find_nearby_endpoint(
     Find nearby gyms or running tracks.
     
     Required:
-    - location: Location string (address, city, etc.)
+    - location: Location string (address, city, etc., e.g., "New York, NY")
     
     Optional:
     - place_type: "gyms" or "tracks" (default: "gyms")
-    - radius_km: Search radius in kilometers (default: 2.0)
-    - limit: Maximum number of results (default: 10)
+    - radius_km: Search radius in kilometers (default: 2.0, max: 50)
+    - limit: Maximum number of results (default: 10, max: 50)
     """
     try:
+        # Input validation
+        if not location or not location.strip():
+            raise HTTPException(
+                status_code=400,
+                detail="location parameter is required and cannot be empty"
+            )
+        
         if radius_km < 0.1 or radius_km > 50:
             raise HTTPException(
                 status_code=400,
@@ -227,15 +266,16 @@ async def find_nearby_endpoint(
                 detail="limit must be between 1 and 50"
             )
         
-        if place_type == "gyms":
-            results = find_nearby_gyms(location, radius_km, limit)
-        elif place_type == "tracks":
-            results = find_running_tracks(location, radius_km, limit)
-        else:
+        if place_type not in ["gyms", "tracks"]:
             raise HTTPException(
                 status_code=400,
                 detail="place_type must be 'gyms' or 'tracks'"
             )
+        
+        if place_type == "gyms":
+            results = find_nearby_gyms(location.strip(), radius_km, limit)
+        else:  # tracks
+            results = find_running_tracks(location.strip(), radius_km, limit)
         
         return JSONResponse(content={
             "location": location,

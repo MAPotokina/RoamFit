@@ -4,6 +4,15 @@ from agents.equipment_detection import detect_equipment
 from agents.workout_summary import summarize_workout_history
 from agents.workout_generator import generate_workout
 
+# MCP Server imports (for future Strands integration)
+# from agents.graph_trends import graph_trends_server
+# from agents.location_activity import location_activity_server
+
+# Note: MCP servers are currently available as standalone functions.
+# For Strands integration, register MCP servers as tools:
+# orchestrator.register_mcp_server(graph_trends_server)
+# orchestrator.register_mcp_server(location_activity_server)
+
 
 def generate_workout_flow(
     image_path: Optional[str] = None,
@@ -27,7 +36,7 @@ def generate_workout_flow(
     # Step 1: Detect equipment from image if provided
     if image_path:
         try:
-            detection_result = detect_equipment(image_path, location=location)
+            detection_result = detect_equipment(image_path, location=location or None)  # type: ignore
             detected_equipment = detection_result.get("equipment", [])
             detection_id = detection_result.get("detection_id")
         except Exception as e:
