@@ -10,6 +10,11 @@ from database import get_db_connection, get_workout_history
 
 
 def get_workout_stats() -> Dict[str, Any]:
+    """
+    Get workout statistics from database.
+    
+    Returns dict compatible with WorkoutStats model.
+    """
     """Get workout statistics from database."""
     with get_db_connection() as conn:
         cursor = conn.cursor()
@@ -54,6 +59,11 @@ def get_workout_stats() -> Dict[str, Any]:
 
 
 def generate_charts(chart_type: str = "frequency") -> Dict[str, str]:
+    """
+    Generate workout progress charts.
+    
+    Returns dict compatible with ChartData model.
+    """
     """
     Generate workout progress charts.
     

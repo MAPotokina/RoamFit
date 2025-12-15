@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import List, Dict, Any
 from utils.llm import call_vision
 from database import save_equipment_detection
+from models.schemas import EquipmentDetection
 
 
 def detect_equipment(
@@ -60,11 +61,13 @@ JSON response:"""
             location=location
         )
         
-        return {
-            "equipment": equipment_list,
-            "detection_id": detection_id,
-            "image_path": image_path
-        }
+        detection = EquipmentDetection(
+            equipment=equipment_list,
+            detection_id=detection_id,
+            image_path=image_path,
+            location=location
+        )
+        return detection.to_dict()
         
     except json.JSONDecodeError as e:
         # If JSON parsing fails, return empty list
@@ -74,12 +77,14 @@ JSON response:"""
             detected_equipment=equipment_list,
             location=location
         )
-        return {
-            "equipment": equipment_list,
-            "detection_id": detection_id,
-            "image_path": image_path,
-            "error": f"Failed to parse JSON response: {str(e)}"
-        }
+        detection = EquipmentDetection(
+            equipment=equipment_list,
+            detection_id=detection_id,
+            image_path=image_path,
+            location=location,
+            error=f"Failed to parse JSON response: {str(e)}"
+        )
+        return detection.to_dict()
     except Exception as e:
         # Handle other errors
         raise Exception(f"Equipment detection failed: {str(e)}")

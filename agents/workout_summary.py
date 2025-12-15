@@ -2,6 +2,7 @@
 from typing import Dict, Optional, List, Any
 from database import get_last_workout as db_get_last_workout, get_workout_history
 from utils.llm import call_llm
+from models.schemas import WorkoutHistory
 
 
 def get_last_workout() -> Optional[Dict[str, Any]]:
@@ -10,15 +11,20 @@ def get_last_workout() -> Optional[Dict[str, Any]]:
 
 
 def summarize_workout_history(limit: int = 5) -> Dict[str, Any]:
-    """Summarize recent workout history using LLM."""
+    """
+    Summarize recent workout history using LLM.
+    
+    Returns dict compatible with WorkoutHistory model.
+    """
     workouts = get_workout_history(limit)
     
     if not workouts:
-        return {
-            "summary": "No workout history available.",
-            "last_workout_date": None,
-            "total_workouts": 0
-        }
+        history = WorkoutHistory(
+            summary="No workout history available.",
+            last_workout_date=None,
+            total_workouts=0
+        )
+        return history.to_dict()
     
     # Format workouts for LLM prompt
     workout_text = ""
@@ -40,9 +46,10 @@ Provide a concise summary:"""
     
     summary = call_llm(prompt, agent_name="workout_summary")
     
-    return {
-        "summary": summary,
-        "last_workout_date": workouts[0]["date"] if workouts else None,
-        "total_workouts": len(workouts)
-    }  # type: ignore
+    history = WorkoutHistory(
+        summary=summary,
+        last_workout_date=workouts[0]["date"] if workouts else None,
+        total_workouts=len(workouts)
+    )
+    return history.to_dict()
 
