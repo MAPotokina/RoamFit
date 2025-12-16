@@ -1,12 +1,12 @@
 """Models module for ROAMFIT."""
 from models.schemas import (
-    Exercise,
-    WorkoutPlan,
-    WorkoutHistory,
-    WorkoutStats,
     ChartData,
-    Location,
     EquipmentDetection,
+    Exercise,
+    Location,
+    WorkoutHistory,
+    WorkoutPlan,
+    WorkoutStats,
 )
 
 __all__ = [
@@ -18,4 +18,3 @@ __all__ = [
     "Location",
     "EquipmentDetection",
 ]
-

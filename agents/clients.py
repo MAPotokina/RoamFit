@@ -1,6 +1,7 @@
 """MCP Client setup for ROAMFIT agents."""
 import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 from mcp import StdioServerParameters, stdio_client
 from strands.models.openai import OpenAIModel
@@ -25,7 +26,7 @@ llm_model = OpenAIModel(
     model_id=openai_model_id,
     params={
         "temperature": openai_temperature,
-    }
+    },
 )
 
 # MCP Client for Equipment Detection
@@ -37,7 +38,7 @@ equipment_detection_client = MCPClient(
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
-            }
+            },
         )
     )
 )
@@ -51,7 +52,7 @@ workout_summary_client = MCPClient(
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
-            }
+            },
         )
     )
 )
@@ -65,7 +66,7 @@ workout_generator_client = MCPClient(
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
-            }
+            },
         )
     )
 )
@@ -79,7 +80,7 @@ graph_trends_client = MCPClient(
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
-            }
+            },
         )
     )
 )
@@ -93,7 +94,7 @@ location_activity_client = MCPClient(
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
-            }
+            },
         )
     )
 )
@@ -107,8 +108,7 @@ workout_management_client = MCPClient(
             env={
                 **os.environ,
                 "PYTHONPATH": str(project_root),
-            }
+            },
         )
     )
 )
-

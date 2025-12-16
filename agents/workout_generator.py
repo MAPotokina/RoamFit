@@ -1,9 +1,10 @@
 """Workout Generator Agent for ROAMFIT."""
 import json
 import logging
-from typing import List, Dict, Any, Optional
-from utils.llm import call_llm
+from typing import Any, Dict, List, Optional
+
 from database import save_workout
+from utils.llm import call_llm
 
 logger = logging.getLogger(__name__)
 
@@ -12,30 +13,34 @@ def generate_workout(
     equipment: List[str],
     workout_history: Optional[Dict[str, Any]] = None,
     location: Optional[str] = None,
-    save_to_db: bool = True
+    save_to_db: bool = True,
 ) -> Dict[str, Any]:
     """Generate workout plan based on equipment and history."""
-    logger.info(f"Generating workout: equipment={equipment}, location={location}, has_history={workout_history is not None}")
-    
+    logger.info(
+        f"Generating workout: equipment={equipment}, location={location}, has_history={workout_history is not None}"
+    )
+
     if not equipment:
         logger.warning("No equipment provided for workout generation")
         return {
             "exercises": [],
             "duration_minutes": 0,
             "focus": "none",
-            "error": "No equipment provided"
+            "error": "No equipment provided",
         }
-    
+
     # Format equipment list
     equipment_text = ", ".join(equipment)
-    
+
     # Format workout history if provided
     history_text = ""
     if workout_history and workout_history.get("summary"):
         history_text = f"\nPrevious workout summary: {workout_history['summary']}\n"
-        history_text += f"Last workout date: {workout_history.get('last_workout_date', 'Unknown')}\n"
+        history_text += (
+            f"Last workout date: {workout_history.get('last_workout_date', 'Unknown')}\n"
+        )
         history_text += f"Total previous workouts: {workout_history.get('total_workouts', 0)}\n"
-    
+
     # Create prompt requesting JSON response
     prompt = f"""Generate a CrossFit-style workout plan in whiteboard format (CONCISE, no long descriptions).
 
@@ -77,24 +82,24 @@ IMPORTANT - WHITEBOARD STYLE:
 - NO long descriptions - keep it like a whiteboard!
 
 JSON response:"""
-    
+
     try:
         # Call LLM
         response_text = call_llm(prompt, agent_name="workout_generator")
-        
+
         # Parse JSON response
         response_text = response_text.strip()
-        
+
         # Find JSON object in response
         start_idx = response_text.find("{")
         end_idx = response_text.rfind("}") + 1
-        
+
         if start_idx == -1 or end_idx == 0:
             raise ValueError("No JSON object found in response")
-        
+
         json_str = response_text[start_idx:end_idx]
         workout_plan = json.loads(json_str)
-        
+
         # Validate structure
         if "format" not in workout_plan:
             workout_plan["format"] = "AMRAP"  # Default CrossFit format
@@ -108,7 +113,7 @@ JSON response:"""
             # Generate description if missing
             format_name = workout_plan.get("format", "AMRAP")
             workout_plan["workout_description"] = f"Perform this workout as {format_name}"
-        
+
         # Save workout to database if requested
         if save_to_db and not workout_plan.get("error"):
             try:
@@ -116,7 +121,7 @@ JSON response:"""
                     equipment=equipment,
                     workout_plan=workout_plan,
                     location=location,
-                    completed=False
+                    completed=False,
                 )
                 workout_plan["workout_id"] = workout_id
                 logger.info(f"Workout generated and saved with ID: {workout_id}")
@@ -124,18 +129,17 @@ JSON response:"""
                 # Don't fail if saving fails, just log it
                 logger.error(f"Failed to save workout to database: {str(e)}", exc_info=True)
                 workout_plan["save_error"] = str(e)
-        
+
         logger.info("Workout generation completed successfully")
-        return workout_plan
-        
+        return workout_plan  # type: ignore[no-any-return]
+
     except json.JSONDecodeError as e:
         # If JSON parsing fails, return error
         return {
             "exercises": [],
             "duration_minutes": 0,
             "focus": "none",
-            "error": f"Failed to parse JSON response: {str(e)}"
+            "error": f"Failed to parse JSON response: {str(e)}",
         }
     except Exception as e:
         raise Exception(f"Workout generation failed: {str(e)}")
-

@@ -1,6 +1,7 @@
 """Simple test script for LLM utilities."""
-from utils.llm import call_llm
 from pathlib import Path
+
+from utils.llm import call_llm
 
 print("Testing LLM utilities...")
 print("-" * 50)
@@ -33,4 +34,3 @@ else:
 
 print("\n" + "-" * 50)
 print("Test complete!")
-

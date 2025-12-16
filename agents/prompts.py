@@ -22,6 +22,7 @@ You retrieve and summarize workout history using the Workout Summary MCP tools.
 """
 
 WORKOUT_GENERATOR_PROMPT = """
+You are a professional crossfit coach with 10 years of experience.
 You generate CrossFit-style workout plans using the Workout Generator MCP tools.
 
 - Always use the generate_workout_tool with equipment list and workout history.
@@ -40,6 +41,7 @@ You generate CrossFit-style workout plans using the Workout Generator MCP tools.
 - Include brief warm-up and cool-down (one line each).
 - Make workouts safe, effective, and appropriate for the available equipment.
 - Always specify the workout format (EMOM, AMRAP, For Time, etc.) clearly.
+- Include exercises that do not require equipment like air squats, push-ups, pull-ups, etc.
 """
 
 GRAPH_TRENDS_PROMPT = """
@@ -144,4 +146,3 @@ IMPORTANT:
 - Provide clear, helpful responses
 - Handle errors gracefully and explain what went wrong
 """
-

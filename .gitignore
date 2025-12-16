@@ -5,4 +5,10 @@ __pycache__/
 *.pyc
 .venv/
 venv/
+.pytest_cache/
+.coverage
+htmlcov/
+*.db-journal
+tests/*.db
+*.xml
 

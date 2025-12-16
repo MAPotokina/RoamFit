@@ -1,14 +1,22 @@
 """Test script for Equipment Detection Agent."""
+import json
+from pathlib import Path
+
 from agents.equipment_detection import detect_equipment
 from database import get_db_connection
-from pathlib import Path
-import json
 
 print("Testing Equipment Detection Agent...")
 print("-" * 50)
 
 # Check for test image
-test_images = ['test_image.jpg', 'test_image.png', 'test.jpg', 'test.png', 'gym.jpg', 'equipment.jpg']
+test_images = [
+    "test_image.jpg",
+    "test_image.png",
+    "test.jpg",
+    "test.png",
+    "gym.jpg",
+    "equipment.jpg",
+]
 image_path = None
 
 for img in test_images:
@@ -20,24 +28,23 @@ if image_path:
     print(f"\n1. Testing detect_equipment() with: {image_path}")
     try:
         result = detect_equipment(image_path, location="Test Location")
-        print(f"✓ Equipment detection successful:")
+        print("✓ Equipment detection successful:")
         print(f"  Detection ID: {result['detection_id']}")
         print(f"  Equipment found: {result['equipment']}")
         print(f"  Image path: {result['image_path']}")
-        if 'error' in result:
+        if "error" in result:
             print(f"  Warning: {result['error']}")
-        
+
         # Verify database entry
         print("\n2. Verifying database entry:")
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM equipment_detections WHERE id = ?",
-                (result['detection_id'],)
+                "SELECT * FROM equipment_detections WHERE id = ?", (result["detection_id"],)
             )
             row = cursor.fetchone()
             if row:
-                print(f"✓ Database entry found:")
+                print("✓ Database entry found:")
                 print(f"  ID: {row['id']}")
                 print(f"  Timestamp: {row['timestamp']}")
                 print(f"  Image path: {row['image_path']}")
@@ -45,7 +52,7 @@ if image_path:
                 print(f"  Location: {row['location']}")
             else:
                 print("✗ Database entry not found")
-                
+
     except FileNotFoundError as e:
         print(f"✗ {e}")
     except Exception as e:
@@ -67,4 +74,3 @@ except Exception as e:
 
 print("\n" + "-" * 50)
 print("Test complete!")
-
